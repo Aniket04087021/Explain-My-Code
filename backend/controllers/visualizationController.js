@@ -2,7 +2,7 @@
 
 const { runVisualization } = require('../services/executionVisualizerService');
 
-const SUPPORTED = ['javascript', 'typescript', 'python'];
+const SUPPORTED = ['javascript', 'typescript', 'python', 'java', 'cpp'];
 
 /**
  * POST /api/visualize-execution
@@ -17,13 +17,10 @@ async function visualizeExecution(req, res) {
     }
 
     const lang = (language || 'javascript').toLowerCase();
-    if (!SUPPORTED.includes(lang)) {
-      return res.status(400).json({
-        message: `Unsupported language for visualization. Use: ${SUPPORTED.join(', ')}`
-      });
-    }
-
     const result = runVisualization(code, lang);
+    if (!SUPPORTED.includes(lang)) {
+      result.error = result.error || `Visualization is using a generic fallback for "${lang}".`;
+    }
     res.json(result);
   } catch (e) {
     console.error('visualizeExecution:', e);
