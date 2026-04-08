@@ -63,7 +63,8 @@ const analysisSchema = new mongoose.Schema({
   executionSteps: [{
     step: Number,
     description: String,
-    line: Number
+    line: Number,
+    code: String
   }],
   // Unique share ID for public sharing
   shareId: {

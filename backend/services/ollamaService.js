@@ -10,6 +10,66 @@ const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3';
 
 /**
+ * Parse AI steps that may arrive as stringified JSON or invalid objects.
+ */
+function parseRawExecutionSteps(rawSteps = []) {
+  let steps = rawSteps;
+
+  if (typeof steps === 'string') {
+    try {
+      steps = JSON.parse(steps);
+    } catch {
+      steps = [];
+    }
+  }
+
+  return Array.isArray(steps) ? steps : [];
+}
+
+/**
+ * Provides deterministic per-line simulation labels.
+ */
+function getDefaultLineDescription(lineText = '', lineNumber = 1) {
+  const t = String(lineText).trim();
+  if (!t) return `Line ${lineNumber}: Blank line`;
+  if (t.startsWith('//') || t.startsWith('#') || t.startsWith('/*') || t.startsWith('*')) return `Line ${lineNumber}: Comment`;
+  if (t.startsWith('if') || t.startsWith('else') || t.startsWith('switch')) return `Line ${lineNumber}: Evaluate condition`;
+  if (t.startsWith('for') || t.startsWith('while') || t.startsWith('do')) return `Line ${lineNumber}: Loop evaluation/iteration`;
+  if (t.startsWith('function') || t.startsWith('def') || t.startsWith('class')) return `Line ${lineNumber}: Define declaration`;
+  if (t.startsWith('return')) return `Line ${lineNumber}: Return result`;
+  if (t.includes('console.log') || t.startsWith('print')) return `Line ${lineNumber}: Produce output`;
+  if (t.includes('=')) return `Line ${lineNumber}: Assignment/expression`;
+  return `Line ${lineNumber}: Execute statement`;
+}
+
+/**
+ * Builds full line-by-line execution steps so UI can simulate every line.
+ */
+function buildFullExecutionSteps(code = '', rawSteps = []) {
+  const sourceLines = String(code).split('\n');
+  const parsedSteps = parseRawExecutionSteps(rawSteps);
+  const aiByLine = new Map();
+
+  parsedSteps.forEach((step) => {
+    const line = Number(step?.line);
+    const description = String(step?.description || step?.action || step?.text || '').trim();
+    if (!Number.isFinite(line) || line < 1 || !description || aiByLine.has(line)) return;
+    aiByLine.set(line, description);
+  });
+
+  return sourceLines.map((lineText, index) => {
+    const lineNumber = index + 1;
+    const description = aiByLine.get(lineNumber) || getDefaultLineDescription(lineText, lineNumber);
+    return {
+      step: lineNumber,
+      description,
+      line: lineNumber,
+      code: lineText
+    };
+  });
+}
+
+/**
  * Builds a structured prompt for code explanation mode.
  * Requires the AI to respond with valid JSON for consistent parsing.
  */
@@ -131,7 +191,7 @@ async function analyzeWithOllama(code, language, mode = 'explain') {
       interviewQuestions: parsed.interviewQuestions || [],
       roastFeedback: parsed.roastFeedback || '',
       codeQualityScore: Number(parsed.codeQualityScore) || 5,
-      executionSteps: parsed.executionSteps || []
+      executionSteps: buildFullExecutionSteps(code, parsed.executionSteps ?? parsed.execution_steps)
     };
   } catch (error) {
     console.error('Ollama API error:', error.message);
@@ -215,7 +275,7 @@ function generateMockAnalysis(code, language, mode) {
     ],
     roastFeedback: '',
     codeQualityScore: Math.min(8, Math.max(3, Math.round(6 + Math.random() * 2))),
-    executionSteps
+    executionSteps: buildFullExecutionSteps(code, executionSteps)
   };
 
   if (mode === 'roast') {

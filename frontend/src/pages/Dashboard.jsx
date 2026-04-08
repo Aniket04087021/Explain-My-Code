@@ -1,15 +1,16 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
-import { analyzeCode } from '../services/api';
+import { analyzeCode, visualizeExecution } from '../services/api';
 import FlowchartView from '../components/FlowchartView';
 import ExecutionSimulator from '../components/ExecutionSimulator';
+import CodeExecutionVisualizer from '../components/CodeExecutionVisualizer';
 import RoastResult from '../components/RoastResult';
 import GitHubAnalyzer from '../components/GitHubAnalyzer';
 import CodeShareButton from '../components/CodeShareButton';
 import { useAuth } from '../context/AuthContext';
 import {
   Brain, Flame, Play, Copy, Check, Clock, MemoryStick,
-  HelpCircle, Loader2, Code2,  Sparkles
+  HelpCircle, Loader2, Code2, Sparkles, Bug, LayoutGrid
 } from 'lucide-react';
 
 /**
@@ -150,6 +151,15 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('explanation');
   const [highlightLine, setHighlightLine] = useState(null);
   const editorRef = useRef(null);
+  const vizDecorationIds = useRef([]);
+
+  const [rightMode, setRightMode] = useState('insights'); // 'insights' | 'debugger'
+  const [vizSteps, setVizSteps] = useState([]);
+  const [vizIndex, setVizIndex] = useState(0);
+  const [vizError, setVizError] = useState(null);
+  const [vizLoading, setVizLoading] = useState(false);
+  const [vizPlaying, setVizPlaying] = useState(false);
+  const [vizSpeed, setVizSpeed] = useState(650);
 
   // Handle editor mount
   const handleEditorDidMount = (editor) => {
@@ -176,6 +186,7 @@ export default function Dashboard() {
   // Highlight a line in the editor (for execution simulator)
   const handleHighlightLine = useCallback((line) => {
     setHighlightLine(line);
+    if (rightMode === 'debugger') return;
     if (editorRef.current && line) {
       editorRef.current.revealLineInCenter(line);
       editorRef.current.deltaDecorations(
@@ -190,7 +201,79 @@ export default function Dashboard() {
         }]
       );
     }
-  }, []);
+  }, [rightMode]);
+
+  useEffect(() => {
+    const ed = editorRef.current;
+    if (!ed || rightMode !== 'debugger' || !vizSteps.length) {
+      if (ed && vizDecorationIds.current.length) {
+        vizDecorationIds.current = ed.deltaDecorations(vizDecorationIds.current, []);
+      }
+      return;
+    }
+
+    /* Python Tutor–style: green = line that just finished; red = next line to run */
+    const justExecuted = vizSteps[vizIndex]?.line;
+    const nextToRun = vizIndex < vizSteps.length - 1 ? vizSteps[vizIndex + 1]?.line : null;
+
+    const dec = [];
+    const add = (ln, cls, glyphCls) => {
+      if (!ln) return;
+      dec.push({
+        range: { startLineNumber: ln, startColumn: 1, endLineNumber: ln, endColumn: 1 },
+        options: {
+          isWholeLine: true,
+          className: cls,
+          ...(glyphCls ? { glyphMarginClassName: glyphCls } : {}),
+        },
+      });
+    };
+    if (justExecuted) add(justExecuted, 'monaco-line-just-executed', 'monaco-glyph-just-executed');
+    if (nextToRun) add(nextToRun, 'monaco-line-next-exec', 'monaco-glyph-next-exec');
+
+    vizDecorationIds.current = ed.deltaDecorations(vizDecorationIds.current, dec);
+    const focusLine = nextToRun || justExecuted;
+    if (focusLine) ed.revealLineInCenter(focusLine);
+  }, [rightMode, vizSteps, vizIndex]);
+
+  const handleRunVisualization = async () => {
+    if (!code.trim()) {
+      setError('Please paste some code to visualize');
+      return;
+    }
+    if (!['javascript', 'typescript', 'python'].includes(language)) {
+      setVizSteps([]);
+      setVizError(`Step-through visualization supports JavaScript, TypeScript, and Python only (current: ${language}).`);
+      setRightMode('debugger');
+      return;
+    }
+
+    setVizLoading(true);
+    setVizError(null);
+    setError('');
+    setVizPlaying(false);
+    try {
+      const { data } = await visualizeExecution(code, language);
+      setVizSteps(data.executionSteps || []);
+      setVizIndex(0);
+      setRightMode('debugger');
+      if (data.error) setVizError(data.error);
+    } catch (err) {
+      setVizSteps([]);
+      let msg = err.response?.data?.message || err.response?.data?.error;
+      if (!msg) {
+        if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+          msg = 'Cannot reach the API server. Start the backend (npm run dev in /backend) and ensure Vite proxies /api to the same port (see frontend/.env VITE_API_TARGET, default http://localhost:5000).';
+        } else {
+          msg = err.message || 'Visualization request failed.';
+        }
+      }
+      setVizError(msg);
+      setRightMode('debugger');
+    } finally {
+      setVizLoading(false);
+    }
+  };
 
   // Submit code for analysis
   const handleAnalyze = async (analysisMode) => {
@@ -299,6 +382,7 @@ export default function Dashboard() {
                     fontSize: 14,
                     fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                     minimap: { enabled: false },
+                    glyphMargin: true,
                     scrollBeyondLastLine: false,
                     padding: { top: 16, bottom: 16 },
                     lineNumbers: 'on',
@@ -349,8 +433,9 @@ export default function Dashboard() {
               </button>
 
               <button
-                onClick={() => { handleAnalyze('explain'); setActiveTab('execution'); }}
-                disabled={loading}
+                type="button"
+                onClick={handleRunVisualization}
+                disabled={vizLoading}
                 className="btn-secondary"
                 style={{
                   padding: '0.9rem',
@@ -360,7 +445,8 @@ export default function Dashboard() {
                   color: 'var(--success)',
                 }}
               >
-                <Play size={18} /> Run Visualization
+                {vizLoading ? <Loader2 size={18} className="animate-spin" /> : <Bug size={18} />}
+                Run Visualization
               </button>
             </div>
 
@@ -370,6 +456,48 @@ export default function Dashboard() {
 
           {/* Right: Results Panel */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{
+              display: 'flex',
+              gap: '0.35rem',
+              background: 'var(--bg-secondary)',
+              padding: '0.3rem',
+              borderRadius: 'var(--radius-md)',
+            }}>
+              <button
+                type="button"
+                onClick={() => setRightMode('insights')}
+                className={rightMode === 'insights' ? 'btn-primary' : 'btn-secondary'}
+                style={{ flex: 1, padding: '0.45rem', fontSize: '0.75rem', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                <LayoutGrid size={14} /> AI Insights
+              </button>
+              <button
+                type="button"
+                onClick={() => setRightMode('debugger')}
+                className={rightMode === 'debugger' ? 'btn-primary' : 'btn-secondary'}
+                style={{ flex: 1, padding: '0.45rem', fontSize: '0.75rem', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                <Bug size={14} /> Step Debugger
+              </button>
+            </div>
+
+            {rightMode === 'debugger' ? (
+              <div className="animate-fade-in" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                <CodeExecutionVisualizer
+                  steps={vizSteps}
+                  sourceLines={code.split('\n')}
+                  index={vizIndex}
+                  onIndexChange={setVizIndex}
+                  playing={vizPlaying}
+                  onPlayingChange={setVizPlaying}
+                  speed={vizSpeed}
+                  onSpeedChange={setVizSpeed}
+                  error={vizError}
+                  loading={vizLoading}
+                />
+              </div>
+            ) : (
+            <>
             {/* Error Display */}
             {error && (
               <div style={{
@@ -595,6 +723,7 @@ export default function Dashboard() {
                   <div className="animate-fade-in">
                     <ExecutionSimulator
                       steps={result.executionSteps || []}
+                      sourceCode={code}
                       onHighlightLine={handleHighlightLine}
                     />
                   </div>
@@ -636,9 +765,11 @@ export default function Dashboard() {
                 </div>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Ready to Analyze</h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '300px' }}>
-                  Paste your code in the editor and click <strong>Explain Code</strong> or <strong>Roast My Code</strong> to get started
+                  Paste your code in the editor and click <strong>Explain Code</strong>, <strong>Roast My Code</strong>, or <strong>Run Visualization</strong>
                 </p>
               </div>
+            )}
+            </>
             )}
           </div>
         </div>

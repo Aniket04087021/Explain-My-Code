@@ -1,11 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 /* ============================================
    ExplainMyCode AI - Design System
    ============================================ */
-
-/* Custom Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 /* CSS Custom Properties for theming */
 :root {
@@ -409,6 +407,34 @@ code, pre, .mono {
   opacity: 0.7;
   transform: translateX(0);
   border-left: 3px solid var(--success);
+}
+
+/* Monaco dry-run (Python Tutor–style): green = just executed, red = next to execute */
+.monaco-line-just-executed {
+  background: rgba(134, 239, 172, 0.35) !important;
+  border-left: 3px solid #22c55e !important;
+}
+.monaco-line-next-exec {
+  background: rgba(251, 182, 206, 0.4) !important;
+  border-left: 3px solid #be185d !important;
+}
+.monaco-glyph-just-executed {
+  background: transparent !important;
+  width: 18px !important;
+}
+.monaco-glyph-just-executed::before {
+  content: '➤';
+  color: #16a34a;
+  font-size: 11px;
+}
+.monaco-glyph-next-exec {
+  background: transparent !important;
+  width: 18px !important;
+}
+.monaco-glyph-next-exec::before {
+  content: '➤';
+  color: #be185d;
+  font-size: 11px;
 }
 
 /* ============================================

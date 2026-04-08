@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
+const mongoose = require('mongoose');
 const Analysis = require('../models/Analysis');
 const { analyzeWithOllama } = require('../services/ollamaService');
 const { fetchRepoData, generateMockGitHubAnalysis } = require('../services/githubService');
@@ -34,23 +35,29 @@ const analyzeCode = async (req, res) => {
 
     // Generate a unique share ID for this analysis
     const shareId = uuidv4().slice(0, 8);
-
-    // Save analysis to database
-    const analysis = new Analysis({
-      userId: req.user.userId,
-      code,
-      language: lang,
-      mode: analysisMode,
-      ...result,
-      shareId
-    });
-    await analysis.save();
-
-    res.json({
-      id: analysis._id,
+    const responsePayload = {
+      id: null,
       shareId,
       ...result
-    });
+    };
+
+    // Save analysis when DB is connected; otherwise return analysis directly.
+    if (mongoose.connection.readyState === 1) {
+      const analysis = new Analysis({
+        userId: req.user.userId,
+        code,
+        language: lang,
+        mode: analysisMode,
+        ...result,
+        shareId
+      });
+      await analysis.save();
+      responsePayload.id = analysis._id;
+    } else {
+      console.warn('Skipping analysis save: MongoDB is not connected');
+    }
+
+    res.json(responsePayload);
   } catch (error) {
     console.error('Analysis error:', error);
     res.status(500).json({ message: 'Error analyzing code. Please try again.' });

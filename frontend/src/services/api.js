@@ -58,4 +58,8 @@ export const getShared = (shareId) =>
 export const analyzeGithub = (repoUrl) =>
   api.post('/github-analyze', { repoUrl });
 
+/** Sandboxed step-through execution (JavaScript / TypeScript / Python subset) */
+export const visualizeExecution = (code, language) =>
+  api.post('/visualize-execution', { code, language });
+
 export default api;
