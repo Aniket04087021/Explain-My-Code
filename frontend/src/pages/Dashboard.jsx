@@ -8,13 +8,17 @@ import RoastResult from '../components/RoastResult';
 import GitHubAnalyzer from '../components/GitHubAnalyzer';
 import CodeShareButton from '../components/CodeShareButton';
 import { useAuth } from '../context/AuthContext';
-import { Brain, Flame, Bug, Copy, Check, Clock, MemoryStick, HelpCircle, Loader2, Code2, Sparkles, LayoutGrid, MessageSquareMore, TerminalSquare } from 'lucide-react';
+import {
+  Brain, Flame, Bug, Copy, Check, Clock, MemoryStick, HelpCircle,
+  Loader2, Code2, Sparkles, LayoutGrid, MessageSquareMore, TerminalSquare,
+} from 'lucide-react';
 
 const LANGUAGES = [
   { id: 'javascript', label: 'JavaScript', monacoId: 'javascript' },
-  { id: 'python', label: 'Python', monacoId: 'python' },
-  { id: 'java', label: 'Java', monacoId: 'java' },
-  { id: 'cpp', label: 'C++', monacoId: 'cpp' },
+  { id: 'python',     label: 'Python',     monacoId: 'python'     },
+  { id: 'java',       label: 'Java',       monacoId: 'java'       },
+  { id: 'cpp',        label: 'C++',        monacoId: 'cpp'        },
+  { id: 'c',          label: 'C',          monacoId: 'c'          },
   { id: 'typescript', label: 'TypeScript', monacoId: 'typescript' },
 ];
 
@@ -23,12 +27,17 @@ const SAMPLE_CODE = {
   const n = arr.length;
   for (let i = 0; i < n - 1; i++) {
     for (let j = 0; j < n - i - 1; j++) {
-      if (arr[j] > arr[j + 1]) [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+      if (arr[j] > arr[j + 1]) {
+        let temp = arr[j];
+        arr[j] = arr[j + 1];
+        arr[j + 1] = temp;
+      }
     }
   }
   return arr;
 }
 console.log(bubbleSort([64, 34, 25, 12]));`,
+
   python: `def binary_search(arr, target):
     left, right = 0, len(arr) - 1
     while left <= right:
@@ -40,55 +49,113 @@ console.log(bubbleSort([64, 34, 25, 12]));`,
         else:
             right = mid - 1
     return -1
-print(binary_search([1, 3, 5, 7, 9], 7))`,
+
+arr = [1, 3, 5, 7, 9, 11]
+result = binary_search(arr, 7)
+print(f"Found at index: {result}")`,
+
   java: `public class Fibonacci {
     public static int fib(int n) {
         if (n <= 1) return n;
-        int[] dp = new int[n + 1];
-        dp[0] = 0; dp[1] = 1;
-        for (int i = 2; i <= n; i++) dp[i] = dp[i-1] + dp[i-2];
-        return dp[n];
+        int prev = 0, curr = 1;
+        for (int i = 2; i <= n; i++) {
+            int next = prev + curr;
+            prev = curr;
+            curr = next;
+        }
+        return curr;
+    }
+    public static void main(String[] args) {
+        System.out.println(fib(10));
     }
 }`,
-  cpp: `#include <vector>
-#include <unordered_map>
+
+  cpp: `#include <iostream>
+#include <vector>
 using namespace std;
-vector<int> twoSum(vector<int>& nums, int target) {
-    unordered_map<int, int> seen;
-    for (int i = 0; i < nums.size(); i++) {
-        int complement = target - nums[i];
-        if (seen.count(complement)) return {seen[complement], i};
-        seen[nums[i]] = i;
+
+int factorial(int n) {
+    if (n <= 1) return 1;
+    return n * factorial(n - 1);
+}
+
+int main() {
+    for (int i = 1; i <= 5; i++) {
+        cout << i << "! = " << factorial(i) << endl;
     }
-    return {};
+    return 0;
 }`,
+
+  c: `#include <stdio.h>
+
+int gcd(int a, int b) {
+    while (b != 0) {
+        int temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a;
+}
+
+int main() {
+    printf("GCD(48, 18) = %d\\n", gcd(48, 18));
+    printf("GCD(100, 75) = %d\\n", gcd(100, 75));
+    return 0;
+}`,
+
   typescript: `class Stack<T> {
   private items: T[] = [];
   push(item: T): void { this.items.push(item); }
   pop(): T | undefined { return this.items.pop(); }
+  peek(): T | undefined { return this.items[this.items.length - 1]; }
+  get size(): number { return this.items.length; }
 }
+
 const stack = new Stack<number>();
 stack.push(1);
-stack.push(2);`,
+stack.push(2);
+stack.push(3);
+console.log(stack.peek());
+console.log(stack.pop());
+console.log(stack.size);`,
 };
 
 function detectLanguage(code) {
   if (!code) return null;
   const c = code.trim();
   if (c.includes('public class') || c.includes('System.out.println') || c.includes('public static void main')) return 'java';
-  if (c.includes('#include') || c.includes('std::') || c.includes('cout') || c.includes('vector<')) return 'cpp';
-  if (c.includes('def ') || c.includes('import ') && c.includes(':') || c.includes('print(')) return 'python';
+  if (c.includes('#include')) {
+    const looksCpp = c.includes('iostream') || c.includes('cout') || c.includes('vector') || c.includes('std::') || c.includes('using namespace');
+    if (looksCpp) return 'cpp';
+    return 'c';
+  }
+  if (c.includes('def ') || (c.includes('import ') && c.includes(':')) || c.includes('print(')) return 'python';
   if (c.includes(': string') || c.includes(': number') || c.includes('interface ') || c.includes('<T>')) return 'typescript';
   return 'javascript';
 }
 
-function formatValue(value) {
-  if (value === null) return 'null';
-  if (value === undefined) return 'undefined';
-  if (typeof value === 'object') {
-    try { return JSON.stringify(value); } catch { return String(value); }
-  }
-  return String(value);
+function formatValue(v) {
+  if (v === null) return 'null';
+  if (v === undefined) return 'undefined';
+  if (typeof v === 'object') { try { return JSON.stringify(v); } catch { return String(v); } }
+  return String(v);
+}
+
+// Suppress internal AST/simulator errors e.g. "Unsupported stmt elif", "Unsupported Python expression: 1, n"
+const INTERNAL_SIM_ERR = /^unsupported\s+(stmt|expr|node|op|operator|statement|expression|python\s+expression)/i;
+
+function sanitizeStepError(err) {
+  if (!err) return null;
+  const msg = typeof err === 'string' ? err : String(err);
+  return INTERNAL_SIM_ERR.test(msg.trim()) ? null : msg;
+}
+
+// If the majority of backend steps carry internal simulator errors, the backend
+// cannot handle this code — signal to fall back to AI tracing.
+function stepsAreBroken(steps) {
+  if (!Array.isArray(steps) || steps.length === 0) return false;
+  const bad = steps.filter(s => INTERNAL_SIM_ERR.test(String(s?.error || '').trim())).length;
+  return bad > 0 && bad >= Math.ceil(steps.length / 2);
 }
 
 function normalizeVizStep(step = {}, sourceLines = [], index = 0) {
@@ -101,7 +168,7 @@ function normalizeVizStep(step = {}, sourceLines = [], index = 0) {
     output: step.output ?? step.consoleOutput ?? '',
     explanation: step.explanation || step.description || `Execution step ${index + 1}`,
     code: step.code || step.source || (line ? sourceLines[line - 1] : '') || '',
-    error: step.error || null,
+    error: sanitizeStepError(step.error),
   };
 }
 
@@ -112,15 +179,15 @@ function buildDeepExplanation(step, previousStep) {
     .map(([k, v]) => `${k} = ${formatValue(v)}`);
   const stackSummary = Array.isArray(step.stack) && step.stack.length
     ? step.stack.map((frame, index) => {
-      if (typeof frame === 'string') return `${index === step.stack.length - 1 ? 'Current frame' : 'Frame'}: ${frame}`;
-      return `${index === step.stack.length - 1 ? 'Current frame' : 'Frame'}: ${frame?.name || frame?.label || frame?.scope || `Frame ${index + 1}`}`;
-    }).join('\n')
+        const name = typeof frame === 'string' ? frame : frame?.name || frame?.label || `Frame ${index + 1}`;
+        return `${index === step.stack.length - 1 ? 'Current frame' : 'Frame'}: ${name}`;
+      }).join('\n')
     : 'No stack frames were recorded.';
   return [
     step.explanation || 'This step advances the program state.',
     '',
     `Focus line: ${step.line ? `line ${step.line}` : 'line unavailable'}.`,
-    changed.length ? `Variables changed:\n- ${changed.join('\n- ')}` : 'No variables changed compared with the previous step.',
+    changed.length ? `Variables changed:\n- ${changed.join('\n- ')}` : 'No variables changed.',
     '',
     stackSummary,
     '',
@@ -140,6 +207,8 @@ export default function Dashboard() {
   const [copiedSection, setCopiedSection] = useState('');
   const [activeTab, setActiveTab] = useState('explanation');
   const [rightMode, setRightMode] = useState('insights');
+
+  // Viz state — still used when backend is available
   const [vizSteps, setVizSteps] = useState([]);
   const [vizIndex, setVizIndex] = useState(0);
   const [vizPlaying, setVizPlaying] = useState(false);
@@ -147,20 +216,27 @@ export default function Dashboard() {
   const [vizLoading, setVizLoading] = useState(false);
   const [vizError, setVizError] = useState(null);
   const [explanationView, setExplanationView] = useState('step');
+
+  // useAI flag: when true the visualizer handles its own AI tracing
+  const [useAI, setUseAI] = useState(false);
+
   const editorRef = useRef(null);
   const vizDecorationIds = useRef([]);
 
-  const currentLangConfig = LANGUAGES.find((l) => l.id === language) || LANGUAGES[0];
-  const normalizedVizSteps = useMemo(() => vizSteps.map((step, index) => normalizeVizStep(step, code.split('\n'), index)), [vizSteps, code]);
+  const currentLangConfig = LANGUAGES.find(l => l.id === language) || LANGUAGES[0];
+  const normalizedVizSteps = useMemo(() => vizSteps.map((s, i) => normalizeVizStep(s, code.split('\n'), i)), [vizSteps, code]);
   const currentVizStep = normalizedVizSteps[vizIndex] || null;
   const previousVizStep = vizIndex > 0 ? normalizedVizSteps[vizIndex - 1] : null;
 
   useEffect(() => { setExplanationView('step'); }, [vizIndex, rightMode]);
 
+  // Editor line highlighting
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor || rightMode !== 'debugger' || !currentVizStep?.line) {
-      if (editor && vizDecorationIds.current.length) vizDecorationIds.current = editor.deltaDecorations(vizDecorationIds.current, []);
+      if (editor && vizDecorationIds.current.length) {
+        vizDecorationIds.current = editor.deltaDecorations(vizDecorationIds.current, []);
+      }
       return;
     }
     vizDecorationIds.current = editor.deltaDecorations(vizDecorationIds.current, [{
@@ -203,26 +279,33 @@ export default function Dashboard() {
     }
   };
 
+  // Try backend first; fall back to AI mode automatically
   const handleRunVisualization = async () => {
     if (!code.trim()) return setError('Please paste some code to visualize');
     setVizLoading(true);
     setVizError(null);
     setVizPlaying(false);
+    setUseAI(false);
     setError('');
     try {
       const { data } = await visualizeExecution(code, language);
-      setVizSteps(data.executionSteps || []);
-      setVizIndex(0);
-      setVizSpeed(1);
-      setRightMode('debugger');
-      if (data.error) setVizError(data.error);
+      const steps = data.executionSteps || [];
+      // If the backend simulator cannot handle this code, fall back to AI tracing
+      if (stepsAreBroken(steps) || steps.length === 0) {
+        setVizSteps([]);
+        setUseAI(true);
+        setRightMode('debugger');
+      } else {
+        setVizSteps(steps);
+        setVizIndex(0);
+        setVizSpeed(1);
+        setRightMode('debugger');
+        if (data.error) setVizError(data.error);
+      }
     } catch (err) {
-      let msg = err.response?.data?.message || err.response?.data?.error;
-      if (!msg) msg = err.code === 'ERR_NETWORK' || err.message === 'Network Error'
-        ? 'Cannot reach the API server. Start the backend (npm run dev in /backend) and ensure Vite proxies /api to the same port.'
-        : (err.message || 'Visualization request failed.');
+      // Backend unavailable → switch to AI-powered tracing
       setVizSteps([]);
-      setVizError(msg);
+      setUseAI(true);
       setRightMode('debugger');
     } finally {
       setVizLoading(false);
@@ -246,6 +329,8 @@ export default function Dashboard() {
   return (
     <div style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--bg-primary)' }}>
       <div className="container" style={{ padding: '1.5rem', maxWidth: '1600px' }}>
+
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -254,15 +339,20 @@ export default function Dashboard() {
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem' }}>Welcome back, {user?.name || 'Developer'}</p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            {LANGUAGES.map((lang) => (
-              <button key={lang.id} onClick={() => handleLanguageChange(lang.id)} className={language === lang.id ? 'btn-primary' : 'btn-secondary'} style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}>
+            {LANGUAGES.map(lang => (
+              <button key={lang.id} onClick={() => handleLanguageChange(lang.id)}
+                className={language === lang.id ? 'btn-primary' : 'btn-secondary'}
+                style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}>
                 {lang.label}
               </button>
             ))}
           </div>
         </div>
 
+        {/* Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: rightMode === 'debugger' ? 'minmax(0,1.4fr) minmax(320px,1fr) minmax(320px,1fr)' : 'minmax(0,1fr) minmax(0,1fr)', gap: '1.25rem', alignItems: 'start' }}>
+
+          {/* ── LEFT: Editor ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 }}>
             <div className="card dashboard-editor-shell" style={{ padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -307,6 +397,7 @@ export default function Dashboard() {
             <GitHubAnalyzer />
           </div>
 
+          {/* ── MIDDLE: Execution Visualizer ── */}
           {rightMode === 'debugger' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 }}>
               <ExecutionVisualizer
@@ -319,10 +410,15 @@ export default function Dashboard() {
                 onSpeedChange={setVizSpeed}
                 loading={vizLoading}
                 error={vizError}
+                // AI fallback props
+                code={code}
+                language={language}
+                useAI={useAI}
               />
             </div>
           )}
 
+          {/* ── RIGHT: Insights / AI narration ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 }}>
             <div style={{ display: 'flex', gap: '0.35rem', background: 'var(--bg-secondary)', padding: '0.3rem', borderRadius: 'var(--radius-md)' }}>
               <button type="button" onClick={() => setRightMode('insights')} className={rightMode === 'insights' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, padding: '0.45rem', fontSize: '0.75rem', justifyContent: 'center' }}>
@@ -387,7 +483,7 @@ export default function Dashboard() {
                 {loading && (
                   <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1rem' }}>
                     <div className="loader" />
-                    <p style={{ color: 'var(--text-secondary)' }}>{mode === 'roast' ? 'Roasting your code...' : 'Analyzing your code...'}</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>{mode === 'roast' ? 'Roasting your code…' : 'Analyzing your code…'}</p>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>This may take a moment</p>
                   </div>
                 )}
@@ -396,17 +492,13 @@ export default function Dashboard() {
                   <>
                     <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--bg-secondary)', padding: '0.25rem', borderRadius: 'var(--radius-md)', overflowX: 'auto' }}>
                       {[
-                        { id: 'explanation', label: 'Explanation', icon: <Brain size={14} /> },
-                        { id: 'complexity', label: 'Complexity', icon: <Clock size={14} /> },
-                        { id: 'flowchart', label: 'Flowchart', icon: <Code2 size={14} /> },
-                        { id: 'questions', label: 'Interview Q', icon: <HelpCircle size={14} /> },
-                        { id: 'execution', label: 'Simulator', icon: <Bug size={14} /> },
-                      ].map((tab) => (
-                        <button
-                          key={tab.id}
-                          onClick={() => setActiveTab(tab.id)}
-                          style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', whiteSpace: 'nowrap', background: activeTab === tab.id ? 'var(--accent-primary)' : 'transparent', color: activeTab === tab.id ? 'white' : 'var(--text-secondary)' }}
-                        >
+                        { id: 'explanation', label: 'Explanation',  icon: <Brain size={14} /> },
+                        { id: 'complexity',  label: 'Complexity',   icon: <Clock size={14} /> },
+                        { id: 'flowchart',   label: 'Flowchart',    icon: <Code2 size={14} /> },
+                        { id: 'questions',   label: 'Interview Q',  icon: <HelpCircle size={14} /> },
+                        { id: 'execution',   label: 'Simulator',    icon: <Bug size={14} /> },
+                      ].map(tab => (
+                        <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', whiteSpace: 'nowrap', background: activeTab === tab.id ? 'var(--accent-primary)' : 'transparent', color: activeTab === tab.id ? 'white' : 'var(--text-secondary)' }}>
                           {tab.icon} {tab.label}
                         </button>
                       ))}
@@ -429,11 +521,11 @@ export default function Dashboard() {
                         <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Complexity Analysis</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                           <div style={{ padding: '1.25rem', background: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}><Clock size={16} style={{ color: 'var(--accent-primary)' }} /><span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Time Complexity</span></div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}><Clock size={16} style={{ color: 'var(--accent-primary)' }} /><span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Time</span></div>
                             <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{result.timeComplexity}</div>
                           </div>
                           <div style={{ padding: '1.25rem', background: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}><MemoryStick size={16} style={{ color: 'var(--success)' }} /><span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Space Complexity</span></div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}><MemoryStick size={16} style={{ color: 'var(--success)' }} /><span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Space</span></div>
                             <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{result.spaceComplexity}</div>
                           </div>
                         </div>
@@ -441,10 +533,10 @@ export default function Dashboard() {
                           <div style={{ marginTop: '1.5rem' }}>
                             <h4 style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>Logic Steps</h4>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                              {result.steps.map((step, i) => (
+                              {result.steps.map((s, i) => (
                                 <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.5rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-primary)' }}>
                                   <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 600, color: 'white', flexShrink: 0 }}>{i + 1}</div>
-                                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{step}</span>
+                                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{s}</span>
                                 </div>
                               ))}
                             </div>
@@ -459,7 +551,7 @@ export default function Dashboard() {
                       <div className="card animate-fade-in">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                           <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Interview Questions</h3>
-                          <button onClick={() => copyToClipboard(result.interviewQuestions.join('\n'), 'questions')} className="btn-icon">
+                          <button onClick={() => copyToClipboard((result.interviewQuestions || []).join('\n'), 'questions')} className="btn-icon">
                             {copiedSection === 'questions' ? <Check size={16} style={{ color: 'var(--success)' }} /> : <Copy size={16} />}
                           </button>
                         </div>
@@ -474,7 +566,11 @@ export default function Dashboard() {
                       </div>
                     )}
 
-                    {activeTab === 'execution' && <div className="animate-fade-in"><ExecutionSimulator steps={result.executionSteps || []} sourceCode={code} /></div>}
+                    {activeTab === 'execution' && (
+                      <div className="animate-fade-in">
+                        <ExecutionSimulator steps={result.executionSteps || []} sourceCode={code} />
+                      </div>
+                    )}
 
                     {result.roastFeedback && <RoastResult feedback={result.roastFeedback} score={result.codeQualityScore} />}
                     {result.shareId && <CodeShareButton shareId={result.shareId} />}
@@ -500,9 +596,7 @@ export default function Dashboard() {
 
       <style>{`
         @media (max-width: 980px) {
-          .container > div:last-child {
-            grid-template-columns: 1fr !important;
-          }
+          .container > div:last-child { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>

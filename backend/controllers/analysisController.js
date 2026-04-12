@@ -22,7 +22,7 @@ const analyzeCode = async (req, res) => {
       return res.status(400).json({ message: 'Code is required' });
     }
 
-    const validLanguages = ['javascript', 'python', 'java', 'cpp', 'typescript'];
+    const validLanguages = ['javascript', 'python', 'java', 'cpp', 'c', 'typescript'];
     const lang = (language || 'javascript').toLowerCase();
     if (!validLanguages.includes(lang)) {
       return res.status(400).json({ message: `Unsupported language. Use: ${validLanguages.join(', ')}` });

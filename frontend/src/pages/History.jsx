@@ -56,6 +56,7 @@ export default function History() {
     python: '#3776ab',
     java: '#ed8b00',
     cpp: '#00599c',
+    c: '#a8b9cc',
     typescript: '#3178c6',
   };
 

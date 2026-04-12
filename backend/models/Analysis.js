@@ -18,7 +18,7 @@ const analysisSchema = new mongoose.Schema({
   language: {
     type: String,
     required: true,
-    enum: ['javascript', 'python', 'java', 'cpp', 'typescript'],
+    enum: ['javascript', 'python', 'java', 'cpp', 'c', 'typescript'],
     default: 'javascript'
   },
   mode: {

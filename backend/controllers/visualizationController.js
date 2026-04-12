@@ -2,7 +2,7 @@
 
 const { runVisualization } = require('../services/executionVisualizerService');
 
-const SUPPORTED = ['javascript', 'typescript', 'python', 'java', 'cpp'];
+const SUPPORTED = ['javascript', 'typescript', 'python', 'java', 'cpp', 'c'];
 
 /**
  * POST /api/visualize-execution

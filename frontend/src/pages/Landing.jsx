@@ -2,13 +2,20 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   Code2, Zap, Brain, GitBranch, Flame, Play, Github, Share2,
-  Globe, ChevronRight, ArrowRight, Sparkles, Shield, Clock, CheckCircle2
+  Globe, ChevronRight, ArrowRight, Sparkles, Terminal,
 } from 'lucide-react';
+
+const SUPPORTED_LANGS = [
+  { id: 'javascript', name: 'JavaScript', blurb: 'Explain, trace, and refactor modern JS and Node-style code.', accent: '#f7df1e' },
+  { id: 'python', name: 'Python', blurb: 'Step through scripts and data-style snippets with clear narratives.', accent: '#3776ab' },
+  { id: 'java', name: 'Java', blurb: 'Classes, methods, and JVM-oriented patterns explained in context.', accent: '#ed8b00' },
+  { id: 'cpp', name: 'C++', blurb: 'STL-style and classic C++: complexity, flow, and structure.', accent: '#00599c' },
+  { id: 'c', name: 'C', blurb: 'Procedural C: pointers, structs, and control flow made readable.', accent: '#a8b9cc' },
+];
 
 /**
  * Landing Page
- * Modern SaaS landing page with hero, features, how it works,
- * pricing, FAQ, and CTA sections.
+ * Product-focused page for developers: hero, features, languages, workflow, FAQ, CTA.
  */
 export default function Landing() {
   const { user } = useAuth();
@@ -17,8 +24,7 @@ export default function Landing() {
     <div className="bg-grid" style={{ minHeight: '100vh' }}>
       {/* Hero Section */}
       <section className="bg-gradient-radial" style={{ padding: '6rem 0 4rem' }}>
-        <div className="container" style={{ textAlign: 'center', maxWidth: '900px' }}>
-          {/* Badge */}
+        <div className="container" style={{ textAlign: 'center', maxWidth: '920px' }}>
           <div className="animate-fade-in" style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -31,34 +37,32 @@ export default function Landing() {
             color: 'var(--accent-tertiary)',
             marginBottom: '2rem',
           }}>
-            <Sparkles size={14} /> AI-Powered Code Analysis Platform
+            <Terminal size={14} /> Software development companion
           </div>
 
-          {/* Headline */}
           <h1 className="animate-fade-in stagger-1" style={{
-            fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+            fontSize: 'clamp(2.5rem, 5vw, 3.75rem)',
             fontWeight: 900,
-            lineHeight: 1.1,
+            lineHeight: 1.12,
             marginBottom: '1.5rem',
             letterSpacing: '-0.02em',
           }}>
-            Understand Any Code{' '}
-            <span className="gradient-text">In Seconds</span>
+            Ship better code{' '}
+            <span className="gradient-text">with clarity</span>
           </h1>
 
-          {/* Subtitle */}
           <p className="animate-fade-in stagger-2" style={{
-            fontSize: '1.2rem',
+            fontSize: '1.15rem',
             color: 'var(--text-secondary)',
-            maxWidth: '650px',
+            maxWidth: '640px',
             margin: '0 auto 2.5rem',
-            lineHeight: 1.6,
+            lineHeight: 1.65,
           }}>
-            Paste your code and get instant AI explanations, flowcharts,
-            complexity analysis, interview prep, and brutally honest code reviews.
+            ExplainMyCode helps you read, debug, and review real production snippets across
+            JavaScript, Python, Java, C, and C++. Get AI explanations, flowcharts, complexity notes,
+            execution-style traces, and honest reviews—without leaving your workflow.
           </p>
 
-          {/* CTA Buttons */}
           <div className="animate-fade-in stagger-3" style={{
             display: 'flex',
             justifyContent: 'center',
@@ -70,30 +74,29 @@ export default function Landing() {
               className="btn-primary"
               style={{ padding: '0.9rem 2rem', fontSize: '1rem' }}
             >
-              {user ? 'Go to Dashboard' : 'Get Started Free'}
+              {user ? 'Open workspace' : 'Start analyzing code'}
               <ArrowRight size={18} />
             </Link>
             <a
-              href="#features"
+              href="#languages"
               className="btn-secondary"
               style={{ padding: '0.9rem 2rem', fontSize: '1rem' }}
             >
-              See Features
+              Supported languages
             </a>
           </div>
 
-          {/* Stats Bar */}
           <div className="animate-fade-in stagger-4" style={{
             display: 'flex',
             justifyContent: 'center',
             gap: '3rem',
-            marginTop: '4rem',
+            marginTop: '3.5rem',
             flexWrap: 'wrap',
           }}>
             {[
-              { value: '5+', label: 'Languages' },
-              { value: 'AI', label: 'Powered' },
-              { value: '∞', label: 'Analyses' },
+              { value: '5', label: 'Core languages' },
+              { value: 'AI', label: 'Local / private' },
+              { value: '1 flow', label: 'Editor to insight' },
             ].map((stat, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '1.8rem', fontWeight: 800 }} className="gradient-text">{stat.value}</div>
@@ -109,10 +112,10 @@ export default function Landing() {
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '1rem' }}>
-              Powerful <span className="gradient-text">Features</span>
+              Built for <span className="gradient-text">daily development</span>
             </h2>
-            <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto' }}>
-              Everything you need to understand, analyze, and improve your code
+            <p style={{ color: 'var(--text-secondary)', maxWidth: '520px', margin: '0 auto' }}>
+              From onboarding on a legacy module to prepping for a review—the same toolkit in one place.
             </p>
           </div>
 
@@ -122,14 +125,14 @@ export default function Landing() {
             gap: '1.5rem',
           }}>
             {[
-              { icon: <Brain size={24} />, title: 'AI Explanation', desc: 'Get plain English explanations of any code snippet in seconds', color: '#8b5cf6' },
-              { icon: <GitBranch size={24} />, title: 'Flowchart Generation', desc: 'Auto-generate visual flowcharts with Mermaid.js, export as PNG/SVG', color: '#6366f1' },
-              { icon: <Zap size={24} />, title: 'Complexity Analysis', desc: 'Instant Big O time and space complexity breakdown', color: '#3b82f6' },
-              { icon: <Flame size={24} />, title: 'Roast My Code', desc: 'Get brutally honest but funny code reviews with a quality score', color: '#ef4444' },
-              { icon: <Play size={24} />, title: 'Execution Simulator', desc: 'Watch your code execute step-by-step with animated visualization', color: '#22c55e' },
-              { icon: <Github size={24} />, title: 'GitHub Analyzer', desc: 'Analyze entire GitHub repos for architecture and project insights', color: '#f59e0b' },
-              { icon: <Share2 size={24} />, title: 'Code Sharing', desc: 'Generate shareable links for your analyses to share with others', color: '#ec4899' },
-              { icon: <Globe size={24} />, title: 'Multi-Language', desc: 'Support for JavaScript, Python, Java, C++, and TypeScript', color: '#14b8a6' },
+              { icon: <Brain size={24} />, title: 'Deep explanations', desc: 'Plain-language breakdowns of what each part of the code is doing and why it matters.', color: '#8b5cf6' },
+              { icon: <GitBranch size={24} />, title: 'Flowcharts', desc: 'Mermaid diagrams you can export—handy for docs, PRs, and design discussions.', color: '#6366f1' },
+              { icon: <Zap size={24} />, title: 'Complexity', desc: 'Time and space complexity callouts so you can spot hot paths early.', color: '#3b82f6' },
+              { icon: <Flame size={24} />, title: 'Roast mode', desc: 'A blunt, good-humored review when you want feedback that cuts through politeness.', color: '#ef4444' },
+              { icon: <Play size={24} />, title: 'Execution traces', desc: 'Step-through style visualization: strong for JS/TS/Python; guided timeline for Java, C, and C++.', color: '#22c55e' },
+              { icon: <Github size={24} />, title: 'GitHub perspective', desc: 'Paste a public repo URL for a quick architecture and language snapshot.', color: '#f59e0b' },
+              { icon: <Share2 size={24} />, title: 'Shareable analyses', desc: 'Link results to teammates without re-pasting the whole snippet.', color: '#ec4899' },
+              { icon: <Globe size={24} />, title: 'JavaScript · Python · Java · C · C++', desc: 'First-class support across these five stacks in the editor and API. TypeScript is supported where noted in the app.', color: '#14b8a6' },
             ].map((feature, i) => (
               <div
                 key={i}
@@ -166,15 +169,55 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section style={{ padding: '5rem 0', background: 'var(--bg-secondary)' }}>
+      {/* Languages Section */}
+      <section id="languages" style={{ padding: '5rem 0', background: 'var(--bg-secondary)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '1rem' }}>
-              How It <span className="gradient-text">Works</span>
+              Languages that <span className="gradient-text">work end-to-end</span>
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', maxWidth: '560px', margin: '0 auto' }}>
+              Pick a language in the editor for correct highlighting and analysis. Java, C, and C++ use a structured execution timeline when the sandboxed simulator does not apply.
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '1.25rem',
+            maxWidth: '1000px',
+            margin: '0 auto',
+          }}>
+            {SUPPORTED_LANGS.map((lang) => (
+              <div
+                key={lang.id}
+                className="glass-card"
+                style={{
+                  padding: '1.5rem 1.75rem',
+                  borderLeft: `4px solid ${lang.accent}`,
+                }}
+              >
+                <div style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                  {lang.name}
+                </div>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.55, margin: 0 }}>
+                  {lang.blurb}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section style={{ padding: '5rem 0' }}>
+        <div className="container">
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '1rem' }}>
+              How it <span className="gradient-text">fits your workflow</span>
             </h2>
             <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto' }}>
-              Three simple steps to understand any code
+              Three steps from raw code to something you can act on
             </p>
           </div>
 
@@ -186,9 +229,9 @@ export default function Landing() {
             margin: '0 auto',
           }}>
             {[
-              { step: '01', title: 'Paste Your Code', desc: 'Drop your code into the Monaco Editor. Auto-detects the programming language.' },
-              { step: '02', title: 'Choose Analysis Mode', desc: 'Pick between normal explanation, roast mode, or execution visualization.' },
-              { step: '03', title: 'Get Instant Results', desc: 'Receive AI-powered explanation, flowchart, complexity analysis, and more.' },
+              { step: '01', title: 'Paste or write code', desc: 'Use the Monaco editor with syntax highlighting. Language auto-detection keeps the right mode selected.' },
+              { step: '02', title: 'Choose how you want insight', desc: 'Explain, roast, flowchart, complexity, execution view, or GitHub repo analysis.' },
+              { step: '03', title: 'Use the output', desc: 'Copy explanations, export diagrams, share links, or step through execution for debugging and learning.' },
             ].map((item, i) => (
               <div key={i} style={{
                 textAlign: 'center',
@@ -229,114 +272,22 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" style={{ padding: '5rem 0' }}>
-        <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '1rem' }}>
-              Simple <span className="gradient-text">Pricing</span>
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto' }}>
-              Start free, scale as you grow
-            </p>
-          </div>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '1.5rem',
-            maxWidth: '900px',
-            margin: '0 auto',
-          }}>
-            {/* Free Plan */}
-            <div className="glass-card" style={{ padding: '2rem' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Free</div>
-              <div style={{ fontSize: '3rem', fontWeight: 800, margin: '0.5rem 0' }}>$0<span style={{ fontSize: '1rem', fontWeight: 400, color: 'var(--text-muted)' }}>/mo</span></div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Perfect for getting started</p>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
-                {['10 analyses per day', '5 languages supported', 'Code explanations', 'Basic flowcharts'].map((f, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                    <CheckCircle2 size={16} style={{ color: 'var(--success)', flexShrink: 0 }} /> {f}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/signup" className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
-                Get Started
-              </Link>
-            </div>
-
-            {/* Pro Plan */}
-            <div className="glass-card animate-pulse-glow" style={{
-              padding: '2rem',
-              border: '1px solid var(--accent-primary)',
-              position: 'relative',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '-2rem',
-                background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-end))',
-                color: 'white',
-                padding: '0.25rem 2.5rem',
-                fontSize: '0.7rem',
-                fontWeight: 600,
-                transform: 'rotate(45deg)',
-              }}>
-                POPULAR
-              </div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--accent-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pro</div>
-              <div style={{ fontSize: '3rem', fontWeight: 800, margin: '0.5rem 0' }}>$19<span style={{ fontSize: '1rem', fontWeight: 400, color: 'var(--text-muted)' }}>/mo</span></div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Best for active developers</p>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
-                {['Unlimited analyses', 'All languages', 'Roast Mode 🔥', 'Execution simulator', 'GitHub repo analysis', 'Code sharing', 'Priority support'].map((f, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                    <CheckCircle2 size={16} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} /> {f}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/signup" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                Start Pro Trial
-              </Link>
-            </div>
-
-            {/* Enterprise Plan */}
-            <div className="glass-card" style={{ padding: '2rem' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Enterprise</div>
-              <div style={{ fontSize: '3rem', fontWeight: 800, margin: '0.5rem 0' }}>Custom</div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>For teams and organizations</p>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
-                {['Everything in Pro', 'Team collaboration', 'Custom AI models', 'API access', 'SSO & SAML', 'Dedicated support'].map((f, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                    <CheckCircle2 size={16} style={{ color: 'var(--success)', flexShrink: 0 }} /> {f}
-                  </li>
-                ))}
-              </ul>
-              <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
-                Contact Sales
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* FAQ Section */}
       <section style={{ padding: '5rem 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: '700px' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '1rem' }}>
-              Frequently Asked <span className="gradient-text">Questions</span>
+              Frequently asked <span className="gradient-text">questions</span>
             </h2>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {[
-              { q: 'What programming languages are supported?', a: 'We currently support JavaScript, Python, Java, C++, and TypeScript. More languages are coming soon.' },
-              { q: 'How does the AI analysis work?', a: 'We use advanced LLMs (like Llama3 and CodeLlama) running locally via Ollama to analyze your code. Your code stays private and secure.' },
-              { q: 'What is Roast Mode?', a: 'Roast Mode provides humorous but constructive code reviews. Think of it as a senior dev reviewing your code after a long day — honest, funny, and ultimately helpful.' },
-              { q: 'Can I share my analysis results?', a: 'Yes! Every analysis generates a unique shareable link that you can send to colleagues, use in documentation, or post for code reviews.' },
-              { q: 'Is my code stored securely?', a: 'Yes. All code is processed locally through Ollama and stored encrypted in our database. We never share your code with third parties.' },
-              { q: 'Can I analyze GitHub repositories?', a: 'Yes! Paste any public GitHub repository URL and get a complete architecture analysis, language breakdown, and improvement suggestions.' },
+              { q: 'Which programming languages are supported?', a: 'JavaScript, Python, Java, C, and C++ are fully supported for analysis, history, and sharing. TypeScript is available in the editor where the app exposes it. Execution simulation is deepest for JavaScript/TypeScript and Python; Java, C, and C++ use a line-by-line execution timeline suited for learning and review.' },
+              { q: 'How does the AI analysis work?', a: 'We use large language models (for example Llama and CodeLlama) via Ollama when configured. Your snippets are analyzed in that environment; configure the stack to keep processing on infrastructure you trust.' },
+              { q: 'What is roast mode?', a: 'Roast mode is a humorous but constructive code review tone—useful when you want sharp feedback without a formal review meeting.' },
+              { q: 'Can I share results?', a: 'Yes. Analyses can get a shareable link so collaborators see the same explanation and metadata without resending the raw code.' },
+              { q: 'Can I analyze a GitHub repository?', a: 'Yes. Paste a public repository URL to get a quick read on structure, languages, and suggested improvements.' },
             ].map((faq, i) => (
               <details
                 key={i}
@@ -375,23 +326,22 @@ export default function Landing() {
       <section style={{ padding: '5rem 0' }}>
         <div className="container" style={{ textAlign: 'center', maxWidth: '700px' }}>
           <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '1rem' }}>
-            Ready to <span className="gradient-text">Understand</span> Your Code?
+            Ready to <span className="gradient-text">read code faster</span>?
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', marginBottom: '2rem' }}>
-            Join thousands of developers who use ExplainMyCode AI to learn faster and code better.
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.6 }}>
+            Use ExplainMyCode as part of your software development toolkit—whether you are learning a stack or maintaining one.
           </p>
           <Link
             to={user ? '/dashboard' : '/signup'}
             className="btn-primary"
             style={{ padding: '1rem 2.5rem', fontSize: '1.05rem' }}
           >
-            {user ? 'Go to Dashboard' : 'Start For Free'}
+            {user ? 'Go to workspace' : 'Get started'}
             <ArrowRight size={18} />
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
       <footer style={{
         padding: '2rem 0',
         borderTop: '1px solid var(--border-color)',
@@ -405,15 +355,14 @@ export default function Landing() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
             <Code2 size={18} className="gradient-text" />
-            <span>Explain<span className="gradient-text">MyCode</span> AI</span>
+            <span>Explain<span className="gradient-text">MyCode</span></span>
           </div>
           <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-            © 2024 ExplainMyCode AI. All rights reserved.
+            © 2026 ExplainMyCode. All rights reserved.
           </div>
         </div>
       </footer>
 
-      {/* FAQ details chevron rotate CSS */}
       <style>{`
         details[open] summary svg:last-child {
           transform: rotate(90deg);

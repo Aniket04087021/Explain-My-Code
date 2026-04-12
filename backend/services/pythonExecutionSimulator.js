@@ -94,6 +94,44 @@ function parseBlock(rows, startIdx, baseIndent) {
       parsed.attachBody(ch.body);
       i = ch.nextIndex;
     }
+
+    // Stitch elif/else onto the immediately preceding if statement
+    if (parsed.stmt.type === 'elif' || parsed.stmt.type === 'else') {
+      const prev = body[body.length - 1];
+      if (!prev || prev.type !== 'if') {
+        throw new Error(`'elif'/'else' must follow 'if' at line ${parsed.stmt.line}`);
+      }
+      if (parsed.stmt.type === 'elif') {
+        prev.elif.push({ test: parsed.stmt.test, body: parsed.stmt.body, line: parsed.stmt.line });
+      } else {
+        prev.else = parsed.stmt.body;
+      }
+      continue; // don't push elif/else as standalone stmts
+    }
+
+    // After an if, collect any following elif/else at the SAME indent level
+    if (parsed.stmt.type === 'if') {
+      while (i < rows.length && rows[i].indent === r.indent) {
+        const nr = rows[i];
+        if (nr.text.startsWith('elif ') && nr.text.endsWith(':')) {
+          const ep = parseStatementRow(nr);
+          i += 1;
+          const ch = parseBlock(rows, i, nr.indent);
+          ep.attachBody(ch.body);
+          i = ch.nextIndex;
+          parsed.stmt.elif.push({ test: ep.stmt.test, body: ep.stmt.body, line: ep.stmt.line });
+        } else if (nr.text === 'else:') {
+          const ep = parseStatementRow(nr);
+          i += 1;
+          const ch = parseBlock(rows, i, nr.indent);
+          ep.attachBody(ch.body);
+          i = ch.nextIndex;
+          parsed.stmt.else = ep.stmt.body;
+          break;
+        } else break;
+      }
+    }
+
     body.push(parsed.stmt);
   }
   return { body, nextIndex: i };
@@ -154,9 +192,11 @@ function parseStatementRow(r) {
     };
   }
 
-  const forM = t.match(/^for\s+(\w+)\s+in\s+range\s*\(\s*([^)]+)\s*\)\s*:\s*$/);
+  // for <var> in range(...) or for <var> in <iterable>
+  const forM = t.match(/^for\s+(\w+)\s+in\s+(.+):\s*$/);
   if (forM) {
-    const stmt = { type: 'for_range', var: forM[1], hiExpr: forM[2].trim(), body: [], line };
+    const iterExpr = forM[2].trim();
+    const stmt = { type: 'for_in', var: forM[1], iterExpr, body: [], line };
     return {
       needsBody: true,
       attachBody(b) { stmt.body = b; },
@@ -300,7 +340,14 @@ function evalPyExpr(expr, gvars, lvars, funcs, ctx, depth = 0) {
       for (let i = start; i < end; i++) out.push(i);
       return out;
     }
-    throw new Error('range() with 3 args not supported');
+    if (parts.length === 3) {
+      const start = parts[0], end = parts[1], step = parts[2];
+      const out = [];
+      if (step > 0) { for (let i = start; i < end; i += step) out.push(i); }
+      else if (step < 0) { for (let i = start; i > end; i += step) out.push(i); }
+      return out;
+    }
+    throw new Error('range() requires 1, 2, or 3 integer arguments');
   }
 
   if (expr.startsWith('[') && expr.endsWith(']')) {
@@ -360,6 +407,49 @@ function evalPyExpr(expr, gvars, lvars, funcs, ctx, depth = 0) {
 
   const intM = expr.match(/^int\s*\(\s*([^)]+)\s*\)$/);
   if (intM) return Number(evalPyExpr(intM[1], gvars, lvars, funcs, ctx, depth + 1)) | 0;
+
+  // Method calls: obj.method(args)  e.g. arr.append(x), s.split(',')
+  const methodM = expr.match(/^(\w+)\.(\w+)\s*\(([^)]*)\)$/);
+  if (methodM) {
+    const [, objName, method, argsRaw] = methodM;
+    const obj = readVar(objName, gvars, lvars);
+    const args = argsRaw.trim()
+      ? argsRaw.split(/\s*,\s*/).map(a => evalPyExpr(a.trim(), gvars, lvars, funcs, ctx, depth + 1))
+      : [];
+    if (method === 'append' && Array.isArray(obj)) { obj.push(args[0]); return null; }
+    if (method === 'pop' && Array.isArray(obj)) { return obj.pop(); }
+    if (method === 'split' && typeof obj === 'string') { return obj.split(args[0] ?? ''); }
+    if (method === 'join' && typeof obj === 'string') { return (args[0] || []).join(obj); }
+    if (method === 'strip' && typeof obj === 'string') { return obj.trim(); }
+    if (method === 'upper' && typeof obj === 'string') { return obj.toUpperCase(); }
+    if (method === 'lower' && typeof obj === 'string') { return obj.toLowerCase(); }
+    throw new Error(`Method ${objName}.${method}() not supported`);
+  }
+
+  // list() constructor
+  const listM = expr.match(/^list\s*\(([^)]*)\)$/);
+  if (listM) {
+    const inner = listM[1].trim();
+    if (!inner) return [];
+    const val = evalPyExpr(inner, gvars, lvars, funcs, ctx, depth + 1);
+    return Array.isArray(val) ? val : typeof val === 'string' ? val.split('') : [val];
+  }
+
+  // str() constructor
+  const strM = expr.match(/^str\s*\(([^)]*)\)$/);
+  if (strM) return String(evalPyExpr(strM[1].trim(), gvars, lvars, funcs, ctx, depth + 1));
+
+  // abs(), min(), max()
+  const builtinM = expr.match(/^(abs|min|max)\s*\(([^)]*)\)$/);
+  if (builtinM) {
+    const fn = builtinM[1];
+    const args = builtinM[2].trim()
+      ? builtinM[2].split(/\s*,\s*/).map(a => evalPyExpr(a.trim(), gvars, lvars, funcs, ctx, depth + 1))
+      : [];
+    if (fn === 'abs') return Math.abs(args[0]);
+    if (fn === 'min') return Math.min(...args);
+    if (fn === 'max') return Math.max(...args);
+  }
 
   throw new Error(`Unsupported Python expression: ${expr}`);
 }
@@ -497,12 +587,23 @@ function runStatement(st, ctx, gvars, lvars, frameName) {
       }
       return;
     }
-    case 'for_range': {
-      const hi = evalPy(st.hiExpr, gvars, lvars, funcs, ctx);
-      const n = Number(hi);
-      if (n > MAX_LOOP) throw new Error('for range too large');
-      for (let i = 0; i < n; i++) {
-        writeVar(st.var, i, gvars, lvars);
+    case 'for_in': {
+      const iterable = evalPy(st.iterExpr, gvars, lvars, funcs, ctx);
+      // Resolve to an array — handles range(), list variables, strings
+      let items;
+      if (Array.isArray(iterable)) {
+        items = iterable;
+      } else if (typeof iterable === 'string') {
+        items = iterable.split('');
+      } else if (typeof iterable === 'number') {
+        // bare range(n) returns a number alias in older path — unlikely now but safe
+        items = [...Array(Math.max(0, iterable)).keys()];
+      } else {
+        throw new TypeError(`'${st.iterExpr}' is not iterable`);
+      }
+      if (items.length > MAX_LOOP) throw new Error('for loop iterable too large');
+      for (const item of items) {
+        writeVar(st.var, item, gvars, lvars);
         recordStep(ctx, st.line, gvars, lvars, frameName);
         try {
           runBlockList(st.body, ctx, gvars, lvars, frameName);

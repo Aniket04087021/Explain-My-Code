@@ -24,7 +24,7 @@ function getLineExplanation(lineText = '', lineNumber = 1, language = 'javascrip
   if (t.startsWith('for') || t.startsWith('while') || t.startsWith('do')) return `Line ${lineNumber}: Iterate loop`;
   if (t.startsWith('function') || t.startsWith('def') || t.startsWith('class') || t.startsWith('public class')) return `Line ${lineNumber}: Define declaration`;
   if (t.startsWith('return')) return `Line ${lineNumber}: Return value`;
-  if (t.includes('console.log') || t.startsWith('print') || t.includes('System.out.println') || t.includes('cout')) return `Line ${lineNumber}: Produce output`;
+  if (t.includes('console.log') || t.startsWith('print') || t.includes('System.out.println') || t.includes('cout') || t.includes('printf') || t.includes('puts(')) return `Line ${lineNumber}: Produce output`;
   if (t.includes('=')) return `Line ${lineNumber}: Update program state`;
   return `Line ${lineNumber}: Execute ${language} statement`;
 }
