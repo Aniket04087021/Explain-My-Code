@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { getJwtSecret } = require('../config/jwt');
 
 /**
  * Attaches req.user when a valid Bearer token is present; otherwise continues without user.
@@ -15,7 +16,7 @@ function optionalAuth(req, res, next) {
       : authHeader;
     if (!token) return next();
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     req.user = decoded;
   } catch {
     /* invalid/expired token — still allow sandbox visualize */

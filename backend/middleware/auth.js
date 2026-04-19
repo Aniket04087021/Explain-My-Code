@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { getJwtSecret } = require('../config/jwt');
 
 /**
  * JWT Authentication Middleware
@@ -23,7 +24,7 @@ const auth = (req, res, next) => {
     }
 
     // Verify token and attach user data to request
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     req.user = decoded;
     next();
   } catch (error) {

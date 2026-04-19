@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth');
 const analysisRoutes = require('./routes/analysis');
 const visualizationRoutes = require('./routes/visualization');
+const { DEFAULT_JWT_SECRET } = require('./config/jwt');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -23,6 +24,10 @@ app.use(cors({
 
 // Parse JSON request bodies (limit to 5MB for large code blocks)
 app.use(express.json({ limit: '5mb' }));
+
+if (!process.env.JWT_SECRET && process.env.NODE_ENV !== 'production') {
+  console.warn(`⚠️ JWT_SECRET is not set. Using the built-in dev secret "${DEFAULT_JWT_SECRET}". Set JWT_SECRET for production.`);
+}
 
 // Rate limiting to prevent abuse of the analysis API
 const apiLimiter = rateLimit({

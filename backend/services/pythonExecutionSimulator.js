@@ -54,6 +54,8 @@ function recordStep(ctx, line, gvars, lvars, frameName) {
     step: ctx.stepNo,
     line,
     code: codeLine,
+    text: codeLine,
+    description: codeLine ? `Execute line ${line}` : `Step ${ctx.stepNo}`,
     variables,
     frames,
     output: ctx.consoleLines.join('\n')

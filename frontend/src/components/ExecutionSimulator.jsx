@@ -18,26 +18,32 @@ export default function ExecutionSimulator({ steps = [], sourceCode = '', onHigh
     if (!Array.isArray(steps)) return [];
     return steps
       .map((step, index) => {
-        const description = String(step?.description || step?.text || '').trim();
-        if (!description) return null;
-        const line = Number(step?.line);
+        const rawLine = Number(step?.line);
+        const description = String(
+          step?.description ||
+          step?.text ||
+          step?.explanation ||
+          step?.summary ||
+          ''
+        ).trim() || `Step ${index + 1}`;
+        const line = Number.isFinite(rawLine) ? rawLine : null;
         const lineText = String(
           step?.code ??
-          (Number.isFinite(line) && line > 0 ? sourceCodeLines[line - 1] : '')
+          (line && line > 0 ? sourceCodeLines[line - 1] : '')
         );
         return {
           step: index + 1,
           description,
-          line: Number.isFinite(line) && line > 0 ? line : null,
+          line: line && line > 0 ? line : null,
           code: lineText,
         };
-      })
-      .filter(Boolean);
+      });
   }, [steps, sourceCodeLines]);
 
-  const currentStepData = currentStep >= 0 ? normalizedSteps[currentStep] : null;
-  const progress = currentStep >= 0 ? ((currentStep + 1) / normalizedSteps.length) * 100 : 0;
-  const remainingSteps = currentStep >= 0 ? Math.max(0, normalizedSteps.length - (currentStep + 1)) : normalizedSteps.length;
+  const activeStepIndex = normalizedSteps.length ? Math.min(Math.max(currentStep, 0), normalizedSteps.length - 1) : -1;
+  const currentStepData = activeStepIndex >= 0 ? normalizedSteps[activeStepIndex] : null;
+  const progress = activeStepIndex >= 0 ? ((activeStepIndex + 1) / normalizedSteps.length) * 100 : 0;
+  const remainingSteps = activeStepIndex >= 0 ? Math.max(0, normalizedSteps.length - (activeStepIndex + 1)) : normalizedSteps.length;
   const etaSeconds = Math.ceil((remainingSteps * speed) / 1000);
 
   // Auto-advance steps when playing
@@ -178,7 +184,7 @@ export default function ExecutionSimulator({ steps = [], sourceCode = '', onHigh
       }}>
         <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '0.55rem 0.65rem' }}>
           <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Step</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>{currentStep >= 0 ? currentStep + 1 : 0} / {normalizedSteps.length}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>{activeStepIndex >= 0 ? activeStepIndex + 1 : 0} / {normalizedSteps.length}</div>
         </div>
         <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '0.55rem 0.65rem' }}>
           <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Progress</div>
@@ -223,9 +229,9 @@ export default function ExecutionSimulator({ steps = [], sourceCode = '', onHigh
       {/* Steps Timeline */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '340px', overflowY: 'auto', paddingRight: '0.3rem' }}>
         {normalizedSteps.map((step, index) => {
-          const isActive = index === currentStep;
-          const isCompleted = index < currentStep;
-          const isPending = index > currentStep;
+          const isActive = index === activeStepIndex;
+          const isCompleted = index < activeStepIndex;
+          const isPending = index > activeStepIndex;
 
           return (
             <div
@@ -234,7 +240,7 @@ export default function ExecutionSimulator({ steps = [], sourceCode = '', onHigh
               onClick={() => handleStepClick(index)}
               className={`execution-step ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
               style={{
-                opacity: isPending && currentStep >= 0 ? 0.4 : 1,
+                opacity: isPending && activeStepIndex >= 0 ? 0.4 : 1,
                 padding: '0.75rem 1rem',
                 borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',

@@ -134,6 +134,8 @@ function recordStep(ctx, line, globalEnv, localEnv, frameName) {
     step: ctx.stepNo,
     line,
     code,
+    text: code,
+    description: code ? `Execute line ${line}` : `Step ${ctx.stepNo}`,
     variables,
     frames,
     output: ctx.consoleLines.join('\n')

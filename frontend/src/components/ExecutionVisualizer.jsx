@@ -56,8 +56,8 @@ function normalizeStep(step = {}, idx = 0) {
       ? step.stack
       : Array.isArray(step.frames) ? step.frames : [],
     output: step.output ?? step.consoleOutput ?? '',
-    explanation: step.explanation || step.description || `Step ${idx + 1}`,
-    code: step.code || step.source || '',
+    explanation: step.explanation || step.description || step.text || step.summary || `Step ${idx + 1}`,
+    code: step.code || step.source || step.text || '',
     error: sanitizeError(step.error),
   };
 }
@@ -383,7 +383,6 @@ export default function ExecutionVisualizer({
   // New AI path — pass these to bypass the backend entirely
   code = '',
   language = 'javascript',
-  useAI = false,           // set true to use built-in Claude tracing
 }) {
   const timerRef = useRef(null);
 
@@ -396,7 +395,9 @@ export default function ExecutionVisualizer({
   const [aiSpeed, setAiSpeed] = useState(1);
   const [vizTab, setVizTab] = useState('state');
 
-  const isAI = useAI || (!propSteps.length && code);
+  // Browser-side AI tracing was brittle and depended on an external API key.
+  // We keep the backend timeline path as the source of truth.
+  const isAI = false;
 
   // Resolve which steps/index/play-state to use
   const rawSteps = isAI ? aiSteps : propSteps;

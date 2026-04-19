@@ -90,6 +90,8 @@ function genericVisualization(code, language, sourceError = null) {
       step: executionSteps.length + 1,
       line: lineNumber,
       code: lineText,
+      text: lineText,
+      description: getLineExplanation(lineText, lineNumber, language),
       variables: { ...variables },
       stack: stack.length ? stack.map((frame, frameIndex) => ({
         name: frame.name || `Frame ${frameIndex + 1}`,

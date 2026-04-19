@@ -217,9 +217,6 @@ export default function Dashboard() {
   const [vizError, setVizError] = useState(null);
   const [explanationView, setExplanationView] = useState('step');
 
-  // useAI flag: when true the visualizer handles its own AI tracing
-  const [useAI, setUseAI] = useState(false);
-
   const editorRef = useRef(null);
   const vizDecorationIds = useRef([]);
 
@@ -285,15 +282,13 @@ export default function Dashboard() {
     setVizLoading(true);
     setVizError(null);
     setVizPlaying(false);
-    setUseAI(false);
     setError('');
     try {
       const { data } = await visualizeExecution(code, language);
       const steps = data.executionSteps || [];
-      // If the backend simulator cannot handle this code, fall back to AI tracing
       if (stepsAreBroken(steps) || steps.length === 0) {
-        setVizSteps([]);
-        setUseAI(true);
+        setVizSteps(steps);
+        setVizError(data.error || 'No execution steps were returned for this code.');
         setRightMode('debugger');
       } else {
         setVizSteps(steps);
@@ -303,9 +298,8 @@ export default function Dashboard() {
         if (data.error) setVizError(data.error);
       }
     } catch (err) {
-      // Backend unavailable → switch to AI-powered tracing
       setVizSteps([]);
-      setUseAI(true);
+      setVizError(err.response?.data?.error || err.response?.data?.message || err.message || 'Visualization backend is unavailable.');
       setRightMode('debugger');
     } finally {
       setVizLoading(false);
@@ -410,10 +404,8 @@ export default function Dashboard() {
                 onSpeedChange={setVizSpeed}
                 loading={vizLoading}
                 error={vizError}
-                // AI fallback props
                 code={code}
                 language={language}
-                useAI={useAI}
               />
             </div>
           )}
