@@ -5,8 +5,12 @@ import axios from 'axios';
  * Configured Axios instance with base URL and auth token interceptor.
  * All API calls go through this instance for consistent auth handling.
  */
+const apiBaseUrl = import.meta.env.VITE_API_TARGET
+  ? `${String(import.meta.env.VITE_API_TARGET).replace(/\/$/, '')}/api`
+  : '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json'
   }

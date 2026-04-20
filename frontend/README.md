@@ -286,6 +286,19 @@ Default:
 
 This is used by the Vite dev proxy for `/api`.
 
+Production backend example:
+
+- `https://explain-my-code-egl1.onrender.com`
+
+If you deploy the frontend separately, set `VITE_API_TARGET` to your Render backend URL before building the frontend.
+For local development against the Render backend, put the same value in `frontend/.env.local` or `frontend/.env` and restart Vite.
+
+Production frontend example:
+
+- `https://explain-my-code-three.vercel.app`
+
+Add that URL to `ALLOWED_ORIGINS` on the backend so browser requests from Vercel are accepted.
+
 ## Local Development
 
 ### Start The Backend
