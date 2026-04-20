@@ -7,7 +7,9 @@ import axios from 'axios';
  */
 const apiBaseUrl = import.meta.env.VITE_API_TARGET
   ? `${String(import.meta.env.VITE_API_TARGET).replace(/\/$/, '')}/api`
-  : '/api';
+  : import.meta.env.PROD
+    ? 'https://explain-my-code-egl1.onrender.com/api'
+    : '/api';
 
 const api = axios.create({
   baseURL: apiBaseUrl,
