@@ -11,6 +11,13 @@ const { DEFAULT_JWT_SECRET } = require('./config/jwt');
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 const MAX_PORT_TRIES = 10;
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
+const corsOrigins = allowedOrigins.length
+  ? allowedOrigins
+  : ['http://localhost:5173', 'http://localhost:3000'];
 
 /**
  * Middleware Configuration
@@ -18,7 +25,7 @@ const MAX_PORT_TRIES = 10;
 
 // Enable CORS for frontend communication
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: corsOrigins,
   credentials: true
 }));
 
