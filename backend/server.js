@@ -17,7 +17,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL 
   .filter(Boolean);
 const corsOrigins = allowedOrigins.length
   ? allowedOrigins
-  : ['http://localhost:5173', 'http://localhost:3000'];
+  : ['http://localhost:5173', 'http://localhost:3000','https://explain-my-code-three.vercel.app'];
 
 /**
  * Middleware Configuration
