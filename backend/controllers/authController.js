@@ -1,7 +1,9 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const { getJwtSecret } = require('../config/jwt');
+const { createUser, findUserByEmail } = require('../services/userStore');
 
 /**
  * Auth Controller
@@ -15,9 +17,11 @@ const { getJwtSecret } = require('../config/jwt');
 const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const trimmedName = String(name || '').trim();
 
     // Validate required fields
-    if (!name || !email || !password) {
+    if (!trimmedName || !normalizedEmail || !password) {
       return res.status(400).json({ message: 'Please provide name, email, and password' });
     }
 
@@ -25,8 +29,13 @@ const signup = async (req, res) => {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
 
+    const usingMongo = mongoose.connection.readyState === 1;
+
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = usingMongo
+      ? await User.findOne({ email: normalizedEmail })
+      : await findUserByEmail(normalizedEmail);
+
     if (existingUser) {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
@@ -36,16 +45,23 @@ const signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create user in database
-    const user = new User({
-      name,
-      email,
-      password: hashedPassword
-    });
-    await user.save();
+    const user = usingMongo
+      ? await new User({
+          name: trimmedName,
+          email: normalizedEmail,
+          password: hashedPassword
+        }).save()
+      : await createUser({
+          name: trimmedName,
+          email: normalizedEmail,
+          password: hashedPassword
+        });
+
+    const userId = user._id ? String(user._id) : user.id;
 
     // Generate JWT token (expires in 7 days)
     const token = jwt.sign(
-      { userId: user._id, email: user.email, name: user.name },
+      { userId, email: user.email, name: user.name },
       getJwtSecret(),
       { expiresIn: '7d' }
     );
@@ -53,7 +69,7 @@ const signup = async (req, res) => {
     res.status(201).json({
       token,
       user: {
-        id: user._id,
+        id: userId,
         name: user.name,
         email: user.email
       }
@@ -71,14 +87,20 @@ const signup = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
     // Validate required fields
-    if (!email || !password) {
+    if (!normalizedEmail || !password) {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
 
+    const usingMongo = mongoose.connection.readyState === 1;
+
     // Find user by email
-    const user = await User.findOne({ email });
+    const user = usingMongo
+      ? await User.findOne({ email: normalizedEmail })
+      : await findUserByEmail(normalizedEmail);
+
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -91,15 +113,17 @@ const login = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id, email: user.email, name: user.name },
+      { userId: user._id ? String(user._id) : user.id, email: user.email, name: user.name },
       getJwtSecret(),
       { expiresIn: '7d' }
     );
 
+    const userId = user._id ? String(user._id) : user.id;
+
     res.json({
       token,
       user: {
-        id: user._id,
+        id: userId,
         name: user.name,
         email: user.email
       }
